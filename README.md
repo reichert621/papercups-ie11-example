@@ -1,79 +1,105 @@
-# Boilerplate
+# Papercups with IE11
 
-Node/Express + React + Babel/TypeScript
+### Install the IE11-supported version of Papercups
 
-## Getting Started
-
-Clone this repository:
-
+In `package.json`, install:
 ```
-git clone git@github.com:reichert621/boilerplate.git
-cd boilerplate
+"@papercups-io/chat-widget": "^1.1.4-beta.1",
 ```
 
-Install the necessary packages:
+> See example: https://github.com/reichert621/papercups-ie11-example/blob/master/package.json#L21
 
-```
-npm install
-```
+### Set the following `.babelrc` configuration
 
-## Using TypeScript
-
-If you'd like to use TypeScript/TSX instead of JavaScript/Babel, go into `webpack.config.js` and update the `entry` from `'./client/App.js'` to `'./client/App.tsx'`.
-
-That's it!
-
-Feel free to delete all Babel-related dependencies afterward. (For example: the `.babelrc` file, any package with `@babel/*`, and the `babel-loader` used in the Webpack configuration.)
-
-## Using JavaScript with Babel
-
-By default, this project uses the JS app as the entry point, with the `babel-loader` used to parse JSX and other ESNext features. So you don't have to change anything to get up and running!
-
-In this case, feel free to delete all TypeScript-related dependencies. (For example: the `client/tsconfig.json` file, the `typescript` dependency, any dependency with `@types/*`, and the `ts-loader` used in the Webpack configuration.)
-
-## Running the app
-
-Run the server in development mode:
-
-```
-npm run server
+```json
+{
+  "presets": [
+    [
+      "@babel/preset-env",
+      {
+        "targets": "> 0.25%, not dead, ie >= 11",
+        "useBuiltIns": "entry",
+        "corejs": "3.6.5"
+      }
+    ],
+    "@babel/preset-react"
+  ],
+  "plugins": [
+    "@babel/proposal-class-properties",
+    "@babel/proposal-object-rest-spread"
+  ]
+}
 ```
 
-Run the UI in development mode:
+> See example: https://github.com/reichert621/papercups-ie11-example/blob/master/.babelrc
 
-```
-npm run ui
-```
+### Add the polyfill for `CustomEvent` and import it at the top of your application
 
-Navigate to the correct port (e.g. `localhost:3000`). You should see something like this:
-<img width="659" alt="Screen Shot 2019-06-16 at 4 33 20 PM" src="https://user-images.githubusercontent.com/5264279/59569221-81bfe400-9054-11e9-8753-cfd95b11c833.png">
-
-## Environment variables
-
-Create a `.env` file. You can do this by copying the `.env.example`:
-
-```
-cp .env.example .env
-```
-
-Variables defined here will be available at `process.env.*` in your server code.
-
-**NB:** Be sure to never check this file in, especially if it contains API keys! (The `.env` file should be included in the `.gitignore` by default in order to prevent this.)
-
-## Production
-
-Run the server in production mode:
-
-```
-npm start
+`polyfills.js`:
+```js
+(function () {
+  function CustomEvent(event, params) {
+    params = params || {bubbles: false, cancelable: false, detail: undefined};
+    var evt = document.createEvent('CustomEvent');
+    evt.initCustomEvent(
+      event,
+      params.bubbles,
+      params.cancelable,
+      params.detail
+    );
+    return evt;
+  }
+  CustomEvent.prototype = window.Event.prototype;
+  window.CustomEvent = CustomEvent;
+})();
 ```
 
-Build the UI for production:
+> See example: https://github.com/reichert621/papercups-ie11-example/blob/master/client/polyfills.js
 
+`App.js`:
+```js
+import 'core-js/stable';
+import './polyfills';
+import React from 'react';
+// etc.
+import {ChatWidget} from '@papercups-io/chat-widget';
 ```
-npm run build
+
+> See example: https://github.com/reichert621/papercups-ie11-example/blob/master/client/App.js#L1-L7
+
+### Add the IE-supported `iframeUrlOverride`:
+
+```jsx
+<ChatWidget
+  {...}
+  iframeUrlOverride="https://chat-window-git-ie11.papercups.vercel.app"
+  {...}
+/>
 ```
 
-## License
+See example: https://github.com/reichert621/papercups-ie11-example/blob/master/client/App.js#L43
 
-[MIT](LICENSE)
+### Add the `css-vars-ponyfill`
+
+In `index.html`, between the `<head>` tags:
+```html
+<head>
+  <!-- ... -->
+  
+  <script src="https://cdn.jsdelivr.net/npm/css-vars-ponyfill@2"></script>
+  <script>
+    cssVars({
+      onlyLegacy: false,
+      preserveVars: true,
+      watch: true
+    });
+  </script>
+</head>
+```
+
+See example: https://github.com/reichert621/papercups-ie11-example/blob/master/client/index.html#L7-L14
+
+### View in IE11
+
+<img width="640" alt="Screen Shot 2020-11-16 at 5 19 37 PM" src="https://user-images.githubusercontent.com/5264279/99315875-5e90f980-2831-11eb-98a1-637b1ff379ca.png">
+
